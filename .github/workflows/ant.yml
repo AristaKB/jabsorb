@@ -16,10 +16,10 @@ jobs:
     - name: Create Zip Archive
       run: |
         TAG_VERSION=$(git describe --tags --abbrev=0)
-        zip -r jabsorb-${TAG_VERSION}-src.zip .
+        zip -r jabsorb-${TAG_VERSION}.zip .
 
     - name: Upload Zip Archive
       uses: actions/upload-artifact@v2
       with:
-        name: jabsorb-${TAG_VERSION}-src
-        path: jabsorb-${TAG_VERSION}-src.zip
+        name: jabsorb-${TAG_VERSION}
+        path: jabsorb-${TAG_VERSION}.zip
