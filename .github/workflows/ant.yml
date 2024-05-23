@@ -1,0 +1,25 @@
+name: Create and Upload Zip Archive
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Create Zip Archive
+      run: |
+        TAG_VERSION=$(git describe --tags --abbrev=0)
+        zip -r jabsorb-${TAG_VERSION}-src.zip .
+
+    - name: Upload Zip Archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: jabsorb-${TAG_VERSION}-src
+        path: jabsorb-${TAG_VERSION}-src.zip
