@@ -21,12 +21,12 @@ jobs:
 
     - name: Download and extract Apache Ant
       run: |
-        wget -O apache-ant-1.6.5-bin.tar.gz https://downloads.apache.org/ant/binaries/apache-ant-1.6.5-bin.tar.gz
-        tar -xzf apache-ant-1.6.5-bin.tar.gz
+        wget -O apache-ant-1.10.12-bin.tar.gz https://downloads.apache.org/ant/binaries/apache-ant-1.10.12-bin.tar.gz
+        tar -xzf apache-ant-1.10.12-bin.tar.gz
 
     - name: Build with Ant
       run: |
-        ./apache-ant-1.6.5/bin/ant
+        ./apache-ant-1.10.12/bin/ant
 
     - name: Verify build output
       run: |
