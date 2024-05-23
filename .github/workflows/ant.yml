@@ -1,0 +1,33 @@
+name: Build and Zip Ant Project
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup JDK
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'adopt'
+        java-version: '1.8'
+
+    - name: Download and extract Apache Ant
+      run: |
+        curl -L -o apache-ant-1.10.12-bin.tar.gz https://downloads.apache.org/ant/binaries/apache-ant-1.10.12-bin.tar.gz
+        tar -xzf apache-ant-1.10.12-bin.tar.gz
+
+    - name: Build with Ant
+      run: |
+        ./apache-ant-1.10.12/bin/ant
+
+    - name: Verify build output
+      run: |
+        ls -la
