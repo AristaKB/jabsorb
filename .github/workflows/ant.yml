@@ -17,17 +17,18 @@ jobs:
       uses: actions/setup-java@v2
       with:
         distribution: 'adopt'
-        java-version: '8'
+        java-version: '8' # Use '8' for Java 1.8
 
     - name: Download and extract Apache Ant
       run: |
-        curl -L -o apache-ant-1.10.12-bin.tar.gz https://downloads.apache.org/ant/binaries/apache-ant-1.10.12-bin.tar.gz
-        tar -xzf apache-ant-1.10.12-bin.tar.gz
+        wget -O apache-ant-1.6.5-bin.tar.gz https://downloads.apache.org/ant/binaries/apache-ant-1.6.5-bin.tar.gz
+        tar -xzf apache-ant-1.6.5-bin.tar.gz
 
     - name: Build with Ant
       run: |
-        ./apache-ant-1.10.12/bin/ant
+        ./apache-ant-1.6.5/bin/ant
 
     - name: Verify build output
       run: |
         ls -la
+
