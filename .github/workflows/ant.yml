@@ -1,9 +1,9 @@
-name: Build and Zip Ant Project
+name: Create and Upload Zip Archive
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - '*'
 
 jobs:
   build:
@@ -13,22 +13,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Setup JDK
-      uses: actions/setup-java@v2
+    - name: Create Zip Archive
+      run: |
+        TAG_VERSION=$(git describe --tags --abbrev=0)
+        zip -r jabsorb-${TAG_VERSION}-src.zip .
+
+    - name: Upload Zip Archive
+      uses: actions/upload-artifact@v2
       with:
-        distribution: 'adopt'
-        java-version: '8' # Use '8' for Java 1.8
-
-    - name: Download and extract Apache Ant
-      run: |
-        wget -O apache-ant-1.10.12-bin.tar.gz https://downloads.apache.org/ant/binaries/apache-ant-1.10.12-bin.tar.gz
-        tar -xzf apache-ant-1.10.12-bin.tar.gz
-
-    - name: Build with Ant
-      run: |
-        ./apache-ant-1.10.12/bin/ant
-
-    - name: Verify build output
-      run: |
-        ls -la
-
+        name: jabsorb-${TAG_VERSION}-src
+        path: jabsorb-${TAG_VERSION}-src.zip
