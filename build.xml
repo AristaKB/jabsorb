@@ -53,13 +53,14 @@
   </target>
 
   <target name="compile" depends="init,init-build" description="Compiles the source into the build directory">
-    <javac debug="true" source="1.4" srcdir="${src}" destdir="${build}">
+    <javac debug="true" source="1.7" srcdir="${src}" destdir="${build}">
       <classpath refid="default-classpath" />
     </javac>
   </target>
 
   <target name="dist" depends="compile,compress-web-content,init-build" description="Puts the compiled source into a jar">
-    <jar destfile="${app-jar}" basedir="${build}" excludes="*~" />
+    <jar destfile="${app-jar}" basedir="${build}" excludes="*~" includes="org/jabsorb/**/*.class"/>
+    <jar destfile="json.jar" basedir="${build}" excludes="*~" includes="org/json/**/*.class"/>
   </target>
 
   <target name="test.init" depends="init" description="Makes directories needed for the test jsps">
@@ -69,7 +70,7 @@
   </target>
 
   <target name="compile.test" depends="test.init, dist, init" description="Compiles the testing classes">
-    <javac debug="true" source="1.4" srcdir="${test.src}" destdir="${test.classes}">
+    <javac debug="true" source="1.7" srcdir="${test.src}" destdir="${test.classes}">
       <classpath>
       	<path refid="jarClasspath" />
         <fileset dir="${lib-test}">
@@ -146,6 +147,7 @@
   <target name="clean" depends="init" description="Cleans all files produced by ant">
     <delete file="${app-war}" />
     <delete file="${app-jar}" />
+    <delete file="json.jar"/>
     <delete file="${webapp}/WEB-INF/web.xml.out" />
     <delete file="${webapp}/WEB-INF/web.xml.generated" />
     <delete file="${webapp}/Test.java.txt" />
@@ -299,10 +301,20 @@
     <zip destfile="${release}/${app-prefix}-src.zip">
       <zipfileset dir="." prefix="${app-prefix}"
           excludes="*.zip,*.tar.gz,*.iml,*.ipr,*.iws,**/.svn/**"/>
+      <!-- Include jabsorb.jar -->
+      <fileset dir="${lib}">
+        <include name="jabsorb-*.jar"/> <!-- Using wildcard to include versioned JAR -->
+        <include name="json.jar"/>
+      </fileset>
     </zip>
     <tar destfile="${release}/${app-prefix}-src.tar">
       <tarfileset dir="." prefix="${app-prefix}"
           excludes="*.zip,*.tar.gz,*.iml,*.ipr,*.iws,**/.svn/**"/>
+      <!-- Include jabsorb.jar -->
+      <fileset dir="${lib}">
+        <include name="jabsorb-*.jar"/> <!-- Using wildcard to include versioned JAR -->
+        <include name="json.jar"/>
+      </fileset>
     </tar>
     <gzip destfile="${release}/${app-prefix}-src.tar.gz" src="${release}/${app-prefix}-src.tar"/>
     <delete file="${release}/${app-prefix}-src.tar"/>

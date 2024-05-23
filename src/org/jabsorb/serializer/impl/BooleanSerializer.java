@@ -97,6 +97,10 @@ public class BooleanSerializer extends AbstractSerializer
     {
       returnValue = (Boolean) jso;
     }
+    else if (clazz == Boolean.class) {
+      returnValue = (Boolean) jso;
+    }
+  
 
     state.setSerialized(jso, returnValue);
     return returnValue;

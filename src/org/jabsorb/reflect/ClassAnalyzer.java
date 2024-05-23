@@ -107,6 +107,15 @@ public class ClassAnalyzer
   {
     log.info("analyzing " + clazz.getName());
     Method methods[] = clazz.getMethods();
+    // java7 does not return a fixed order from getMethods which leads to inconsistent behavior
+    // sort methods by signature to ensure consistent order and method resolution
+    java.util.Arrays.sort(methods, new java.util.Comparator() {
+      public int compare(Object o1, Object o2) {
+          String x1 = ((Method) o1).toGenericString();
+          String x2 = ((Method) o2).toGenericString();
+          return x1.compareTo(x2);
+      }
+    });
     ClassData cd = new ClassData();
     cd.clazz = clazz;
 

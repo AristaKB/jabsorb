@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import org.jabsorb.serializer.MarshallException;
 import org.jabsorb.serializer.ObjectMatch;
@@ -553,19 +554,10 @@ public class JSONSerializer implements Serializable
       Object json) throws UnmarshallException
   {
     // check for duplicate objects or circular references
-    ProcessedObject p = state.getProcessedObject(json);
+    Optional<ProcessedObject> p = tryToFetchObjectFromCache(state, clazz, json);
+    if (p.isPresent()) {
+      return (ObjectMatch)p.get().getSerialized();
 
-    // if this object hasn't been seen before, mark it as seen and continue forth
-
-    if (p == null)
-    {
-      p = state.store(json);
-    }
-    else
-    {
-      // get original serialized version
-      // to recreate circular reference / duplicate object on the java side
-      return (ObjectMatch) p.getSerialized();
     }
 
     /*
@@ -629,19 +621,9 @@ public class JSONSerializer implements Serializable
       throws UnmarshallException
   {
     // check for duplicate objects or circular references
-    ProcessedObject p = state.getProcessedObject(json);
-
-    // if this object hasn't been seen before, mark it as seen and continue forth
-
-    if (p == null)
-    {
-      p = state.store(json);
-    }
-    else
-    {
-      // get original serialized version
-      // to recreate circular reference / duplicate object on the java side
-      return p.getSerialized();
+    Optional<ProcessedObject> p = tryToFetchObjectFromCache(state, clazz, json);
+    if (p.isPresent()) {
+      return p.get().getSerialized();
     }
 
     // If we have a JSON object class hint that is a sub class of the
@@ -683,6 +665,38 @@ public class JSONSerializer implements Serializable
       (jsonClass!=null?jsonClass.getName():"null") + " to " +  clazz.getName());
   }
 
+  private Optional<ProcessedObject> tryToFetchObjectFromCache(SerializerState state, Class clazz, Object json) 
+  {
+    // check for duplicate objects or circular references
+    ProcessedObject p = state.getProcessedObject(json);
+
+    // if this object hasn't been seen before, mark it as seen and continue forth
+    if (p == null) {
+        p = state.store(json);
+    } else if ((clazz != null && (p.getSerialized() == null || p.getSerialized().getClass().equals(clazz))) ||
+               clazz == null) {
+        // get original serialized version
+        // to recreate circular reference / duplicate object on the java side
+        if (log.isDebugEnabled()) {
+            Class objClass = p.getSerialized() == null ? null : p.getSerialized().getClass();
+            String stringRepresentation = p.getSerialized() == null ? "null" : p.getSerialized().toString();
+            String className = objClass == null ? "nullClass" : objClass.getName();
+            log.debug("unmarshall: Got a serialized object of type: " + className +
+                      " cached obj string rep: " + stringRepresentation +
+                      " passed object JSON: " + json.toString() +
+                      " Passed object class: " + json.getClass());
+        }
+        return Optional.of(p);
+    } else if (clazz != null) {
+        if (log.isDebugEnabled()) {
+            String pClass = (p.getSerialized() == null ? "nullClass" : p.getSerialized().getClass().getName());
+            log.debug("Not using cached object, which isn't a proper instance of: " +
+                      clazz.getName() + ", but of: " + pClass);
+        }
+    }
+    return Optional.empty();
+  }
+
   /**
    * Find the corresponding java Class type from json (as represented by a
    * JSONObject or JSONArray,) using the javaClass hinting mechanism. <p/> If
@@ -718,7 +732,13 @@ public class JSONSerializer implements Serializable
       try
       {
         className = ((JSONObject) o).getString("javaClass");
-        return Class.forName(className);
+        // conversion of old class paths to new class paths //v13
+        if (className.startsWith("com.untangle.node"))
+        className = className.replaceFirst("com.untangle.node", "com.untangle.app");
+        if (className.startsWith("com.untangle.uvm.node"))
+        className = className.replaceFirst("com.untangle.uvm.node", "com.untangle.uvm.app");
+        return Class.forName(className, true, Thread.currentThread().getContextClassLoader());
+
       }
       catch (Exception e)
       {
@@ -746,9 +766,9 @@ public class JSONSerializer implements Serializable
       {
         if (compClazz.isArray())
         {
-          return Class.forName("[" + compClazz.getName());
+          return Class.forName("[" + compClazz.getName(),true,Thread.currentThread().getContextClassLoader());
         }
-        return Class.forName("[L" + compClazz.getName() + ";");
+        return Class.forName("[L" + compClazz.getName() + ";",true,Thread.currentThread().getContextClassLoader());
       }
       catch (ClassNotFoundException e)
       {

@@ -108,8 +108,19 @@ import org.slf4j.LoggerFactory;
  * <code>JSONRPCBridge.getGlobalBridge().registerClass("MyClass",
  * com.example.MyClass.class);</code>
  */
-public class JSONRPCBridge implements Serializable
-{
+public class JSONRPCBridge
+ {
+    public JSONRPCBridge()
+    {
+        try {
+            ser.registerDefaultSerializers();
+
+            this.nonce = new java.math.BigInteger(130, new java.security.SecureRandom()).toString(32);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
   /**
    * Used to determine whether two methods match
@@ -242,18 +253,11 @@ public class JSONRPCBridge implements Serializable
   /**
    * Global JSONSerializer instance
    */
-  private static JSONSerializer ser = new JSONSerializer();
+  private JSONSerializer ser = new JSONSerializer();
 
   static
   {
-    try
-    {
-      ser.registerDefaultSerializers();
-    }
-    catch (Exception e)
-    {
-      e.printStackTrace();
-    }
+
   }
 
   /**
@@ -269,11 +273,11 @@ public class JSONRPCBridge implements Serializable
   }
 
   /**
-   * Get the global JSONSerializer object.
+   * Get the JSONSerializer object.
    * 
    * @return the global JSONSerializer object.
    */
-  public static JSONSerializer getSerializer()
+  public JSONSerializer getSerializer()
   {
     return ser;
   }
@@ -299,13 +303,13 @@ public class JSONRPCBridge implements Serializable
   }
 
   /**
-   * Set the global JSONSerializer object.
+   * Set the JSONSerializer object.
    * 
-   * @param ser the global JSONSerializer object.
+   * @param ser the JSONSerializer object.
    */
-  public static void setSerializer(JSONSerializer ser)
+  public void setSerializer(JSONSerializer newValue)
   {
-    JSONRPCBridge.ser = ser;
+    this.ser = newValue;
   }
 
   /* Implementation */
@@ -433,6 +437,11 @@ public class JSONRPCBridge implements Serializable
   private CallbackController cbc = null;
 
   /**
+   * The security nonce
+   */
+  private String nonce = null;
+
+  /**
    * Call a method using a JSON-RPC request object.
    * 
    * @param context The transport context (the HttpServletRequest object in the
@@ -444,9 +453,13 @@ public class JSONRPCBridge implements Serializable
   public JSONRPCResult call(Object context[], JSONObject jsonReq)
   {
     String encodedMethod;
+    String nonce = null;
     Object requestId;
     JSONArray arguments;
     JSONArray fixups;
+
+    try { nonce = jsonReq.getString("nonce"); }
+    catch (JSONException e) { }    
 
     try
     {
@@ -565,6 +578,10 @@ public class JSONRPCBridge implements Serializable
         }
         return new JSONRPCResult(JSONRPCResult.CODE_SUCCESS, requestId, methods);
       }
+      if (encodedMethod.equals("system.getNonce"))
+      {
+        return new JSONRPCResult(JSONRPCResult.CODE_SUCCESS, requestId, this.nonce);
+      }
       // Look up the class, object instance and method objects
       if (className == null
           || methodName == null
@@ -615,6 +632,9 @@ public class JSONRPCBridge implements Serializable
         return new JSONRPCResult(JSONRPCResult.CODE_SUCCESS, requestId, methods);
       }
     }
+    if ( ! this.nonce.equals( nonce ) ) {
+      return new JSONRPCResult(595, requestId, "Invalid security nonce");
+    } 
 
     // Find the specific method
     if ((method = resolveMethod(methodMap, methodName, arguments)) == null)
@@ -677,6 +697,9 @@ public class JSONRPCBridge implements Serializable
         }
       }
       log.error("exception occured",e);
+      for ( Throwable cause = e.getCause() ; cause != null ; cause = cause.getCause() ) {
+        log.error("exception cause: ", cause);
+      }
       result = new JSONRPCResult(JSONRPCResult.CODE_ERR_UNMARSHALL, requestId,
           e.getMessage());
     }
@@ -690,6 +713,9 @@ public class JSONRPCBridge implements Serializable
         }
       }
       log.error("exception occured",e);
+      for ( Throwable cause = e.getCause() ; cause != null ; cause = cause.getCause() ) {
+        log.error("exception cause: ", cause);
+      }
       result = new JSONRPCResult(JSONRPCResult.CODE_ERR_MARSHALL, requestId, e
           .getMessage());
     }
@@ -707,6 +733,9 @@ public class JSONRPCBridge implements Serializable
         }
       }
       log.error("exception occured",e);
+      for ( Throwable cause = e.getCause() ; cause != null ; cause = cause.getCause() ) {
+        log.error("exception cause: ", cause);
+      }
       result = new JSONRPCResult(JSONRPCResult.CODE_REMOTE_EXCEPTION,
           requestId, exceptionTransformer.transform(e));
     }

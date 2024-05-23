@@ -1,5 +1,22 @@
 CHANGES log
 
+2024-05-22 jabsorb 1.2.3 release
+
+* We have a couple minor modifications to jabsorb
+
+* 1) One is a classloader fix to get Class.forName to work when unmarshalling in our enviroment.
+I'm not sure why it doesn't just inherit the correct ClassLoader
+
+* 2) A couple minor fixes to BooleanSerializer and ObjectSerializer (already appear to be in later versions)
+
+* 3) A change to print out more information when marshall/unmarshall fails
+
+* 4) Make the serializer and object table per connection instead of global
+   This is for security because not all connections are admin enable, so those connection should not be able to reference obj12345 if 12345 is the uvmContext just because its in the global table
+  
+* 5) Updated jetty from 6.1.6 to 6.1.23 to remove vulnerability.
+
+
 2008-01-16 jabsorb 1.2.2 release
 
 * The json-rpc-client is now part of jabsorb, under the new package 

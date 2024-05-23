@@ -102,6 +102,10 @@ public class ObjectMatch
    */
   public ObjectMatch max(ObjectMatch m)
   {
+    if (m == null)
+    {
+        return this;
+    }
     if (this.mismatch > m.mismatch)
     {
       return this;
