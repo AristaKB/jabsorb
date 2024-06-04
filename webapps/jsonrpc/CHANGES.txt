@@ -1,5 +1,9 @@
 CHANGES log
 
+2024-06-03 jabsorb 1.2.4 release
+
+* Updated slf4j dependency version
+
 2024-05-22 jabsorb 1.2.3 release
 
 * We have a couple minor modifications to jabsorb
