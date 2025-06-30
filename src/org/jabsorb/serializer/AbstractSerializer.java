@@ -27,6 +27,8 @@
 package org.jabsorb.serializer;
 
 import org.jabsorb.JSONSerializer;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Convenience class for implementing Serializers providing default setOwner and
@@ -91,5 +93,25 @@ public abstract class AbstractSerializer implements Serializer
   public void setOwner(JSONSerializer ser)
   {
     this.ser = ser;
+  }
+
+  /**
+   * Sets javaClass attribute to JSONObject. javaClass value is retrieved from class name of input Object instance
+   * @param o
+   * @param obj
+   * @throws MarshallException
+   */
+  protected void setJavaClassToJSONObject(Object o, JSONObject obj) throws MarshallException {
+    if (ser.getMarshallClassHints())
+    {
+      try
+      {
+        obj.put("javaClass", o.getClass().getName());
+      }
+      catch (JSONException e)
+      {
+        throw new MarshallException("javaClass not found!");
+      }
+    }
   }
 }
