@@ -241,7 +241,7 @@ public class ListSerializer extends AbstractSerializer
         jsonlist = (JSONArray) o;
         break;
       default:
-        throw new UnmarshallException("Invalid Marshall strategy: " + MarshallingModeContext.get());
+        throw new UnmarshallException("Invalid unarshall mode: " + MarshallingModeContext.get());
     }
 
     if (al == null) {

@@ -571,7 +571,7 @@ public class JSONRPCBridge
       // Handle "system.listMethods"
       // this is called by the browser side javascript
       // when a new JSONRpcClient object is initialized.
-      if (encodedMethod.equals("system.listMethods"))
+      if (encodedMethod.startsWith("system.listMethods"))
       {
         HashSet m = new HashSet();
         globalBridge.allInstanceMethods(m);
@@ -590,7 +590,7 @@ public class JSONRPCBridge
         }
         return new JSONRPCResult(JSONRPCResult.CODE_SUCCESS, requestId, methods);
       }
-      if (encodedMethod.equals("system.getNonce"))
+      if (encodedMethod.startsWith("system.getNonce"))
       {
         return new JSONRPCResult(JSONRPCResult.CODE_SUCCESS, requestId, this.nonce);
       }
