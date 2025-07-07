@@ -21,22 +21,28 @@ public enum APIVersion {
         return marshallingMode;
     }
 
-    public static APIVersion fromString(String value) {
+    public static APIVersion fromString(String methodName) {
+        if (methodName == null) {
+            return V1;
+        }
         for (APIVersion version : values()) {
-            if (version.versionString.equalsIgnoreCase(value)) {
+            // case insensitive comparision
+            if (methodName.toLowerCase().endsWith(version.versionString)) {
                 return version;
             }
         }
-        throw new IllegalArgumentException("Unknown API version: " + value);
+        // API version not found in the methodName, default to v1
+        return V1;
     }
 
     /**
-     * Returns mapped MarshallingMode for the given API version value.
-     * Throws IllegalArgumentException if API version value is unknown.
-     * @param versionValue
+     * Returns mapped MarshallingMode for the given methodName.
+     * Lookup for API version (case insensitive) at the end of the methodName.
+     * Returns V1 as default if methodName is null or does not have any valid version string.
+     * @param methodName
      * @return
      */
-    public static MarshallingMode getMarshallingMode(String versionValue) {
-        return fromString(versionValue).getMarshallingMode();
+    public static MarshallingMode getMarshallingMode(String methodName) {
+        return fromString(methodName).getMarshallingMode();
     }
 }

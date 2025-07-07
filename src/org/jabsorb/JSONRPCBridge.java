@@ -523,7 +523,6 @@ public class JSONRPCBridge
 
     String className = null;
     String methodName = null;
-    String apiVersion = null;
     int objectID = 0;
 
     // Parse the class and methodName
@@ -536,12 +535,6 @@ public class JSONRPCBridge
     {
       methodName = t.nextToken();
     }
-    if (t.hasMoreElements()) {
-        apiVersion = t.nextToken();
-    }
-
-    // defaults to v1
-    if (apiVersion == null) apiVersion = DEFAULT_API_VERSION;
 
     // See if we have an object method in the format ".obj#<objectID>"
     if (encodedMethod.startsWith(".obj#"))
@@ -666,8 +659,8 @@ public class JSONRPCBridge
             + method.getName() + "(" + argSignature(method) + ")");
       }
 
-      // Set the marshalling mode based on API version
-      MarshallingModeContext.push(APIVersion.getMarshallingMode(apiVersion));
+      // Set the marshalling mode based on methodName
+      MarshallingModeContext.push(APIVersion.getMarshallingMode(methodName));
 
       // Unmarshall arguments
       Object[] javaArgs = unmarshallArgs(context, method, arguments);
