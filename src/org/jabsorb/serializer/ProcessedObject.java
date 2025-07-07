@@ -165,7 +165,10 @@ public class ProcessedObject
 
     while (link!=null)
     {
-      path.add(0, link.ref);
+      if (link.ref != null) {
+        // don't add null entry
+        path.add(0, link.ref);
+      }
       link = link.getParent();
     }
 
