@@ -27,11 +27,15 @@ public class MarshallingModeContext {
     }
 
     /**
-     * peeks the current MarshallingMode value from the stack
+     * peeks the current MarshallingMode value from the stack. Defaults to JABSORB if not context was set.
      * @return
      */
     public static MarshallingMode get() {
         Deque<MarshallingMode> stack = current.get();
+        if (stack == null || stack.isEmpty()) {
+            // default to JABSORB
+            return MarshallingMode.JABSORB;
+        }
         return stack.isEmpty() ? null : stack.peek();
     }
 
@@ -40,8 +44,15 @@ public class MarshallingModeContext {
      */
     public static void pop() {
         Deque<MarshallingMode> stack = current.get();
-        if (!stack.isEmpty()) {
+        if (stack != null && !stack.isEmpty()) {
             stack.pop();
         }
+    }
+
+    /**
+     * clears the stack
+     */
+    public static void clear() {
+        current.remove();
     }
 }

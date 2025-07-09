@@ -745,7 +745,7 @@ public class JSONRPCBridge
       result = new JSONRPCResult(JSONRPCResult.CODE_REMOTE_EXCEPTION,
           requestId, exceptionTransformer.transform(e));
     } finally {
-        MarshallingModeContext.pop();
+        MarshallingModeContext.clear();
     }
 
     // Return the results
