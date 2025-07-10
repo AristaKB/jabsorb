@@ -35,6 +35,7 @@ import java.util.TreeMap;
 
 import org.jabsorb.serializer.AbstractSerializer;
 import org.jabsorb.serializer.MarshallException;
+import org.jabsorb.serializer.MarshallingModeContext;
 import org.jabsorb.serializer.ObjectMatch;
 import org.jabsorb.serializer.SerializerState;
 import org.jabsorb.serializer.UnmarshallException;
@@ -86,29 +87,44 @@ public class MapSerializer extends AbstractSerializer
       throws MarshallException
   {
     Map map = (Map) o;
-    JSONObject obj = new JSONObject();
+    JSONObject obj = null;
     JSONObject mapdata = new JSONObject();
-    if (ser.getMarshallClassHints())
-    {
-      try
-      {
-        obj.put("javaClass", o.getClass().getName());
-      }
-      catch (JSONException e)
-      {
-        throw new MarshallException("javaClass not found!");
-      }
-    }
+
+    String parentNode = null;
     try
     {
-      obj.put("map", mapdata);
-      state.push(o,mapdata,"map");
+      switch (MarshallingModeContext.get()) {
+        case JABSORB:
+          obj = new JSONObject();
+          if (ser.getMarshallClassHints())
+          {
+            try
+            {
+              obj.put("javaClass", o.getClass().getName());
+            }
+            catch (JSONException e)
+            {
+              throw new MarshallException("javaClass not found!");
+            }
+          }
+          parentNode = "map";
+          obj.put(parentNode, mapdata);
+          break;
+        case STANDARD_REST:
+          // obj becomes the actual map
+          obj = mapdata;
+          break;
+        default:
+          throw new MarshallException("Invalid marshall mode: " + MarshallingModeContext.get());
+      }
+
+      state.push(o, mapdata, parentNode);
     }
     catch (JSONException e)
     {
-      throw new MarshallException("Could not add map to object: "
-          + e.getMessage());
+      throw (MarshallException) new MarshallException("Could not put data"+ e.getMessage()).initCause(e);
     }
+
     Object key = null;
     try
     {
@@ -139,7 +155,10 @@ public class MapSerializer extends AbstractSerializer
     }
     finally
     {
-      state.pop();
+      // pop can only be done if state.push() was done against a parent ref
+      if (parentNode != null) {
+        state.pop();
+      }
     }
     return obj;
   }
@@ -148,19 +167,8 @@ public class MapSerializer extends AbstractSerializer
       throws UnmarshallException
   {
     JSONObject jso = (JSONObject) o;
-    String java_class;
-    try
-    {
-      java_class = jso.getString("javaClass");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("Could not read javaClass", e);
-    }
-    if (java_class == null)
-    {
-      throw new UnmarshallException("no type hint");
-    }
+    String java_class = getJavaClass(jso, clazz);
+
     if (!(java_class.equals("java.util.Map")
         || java_class.equals("java.util.AbstractMap")
         || java_class.equals("java.util.LinkedHashMap")
@@ -169,19 +177,8 @@ public class MapSerializer extends AbstractSerializer
     {
       throw new UnmarshallException("not a Map");
     }
-    JSONObject jsonmap;
-    try
-    {
-      jsonmap = jso.getJSONObject("map");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("Could not read map: " + e.getMessage(), e);
-    }
-    if (jsonmap == null)
-    {
-      throw new UnmarshallException("map missing");
-    }
+    JSONObject jsonmap = getJsonObjectByMarshallingMode(jso, "map");
+
     ObjectMatch m = new ObjectMatch(-1);
     Iterator i = jsonmap.keys();
     String key = null;
@@ -209,19 +206,8 @@ public class MapSerializer extends AbstractSerializer
       throws UnmarshallException
   {
     JSONObject jso = (JSONObject) o;
-    String java_class;
-    try
-    {
-      java_class = jso.getString("javaClass");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("Could not read javaClass", e);
-    }
-    if (java_class == null)
-    {
-      throw new UnmarshallException("no type hint");
-    }
+    String java_class = getJavaClass(jso, clazz);
+
     AbstractMap abmap;
     if (java_class.equals("java.util.Map")
         || java_class.equals("java.util.AbstractMap")
@@ -241,19 +227,8 @@ public class MapSerializer extends AbstractSerializer
     {
       throw new UnmarshallException("not a Map");
     }
-    JSONObject jsonmap;
-    try
-    {
-      jsonmap = jso.getJSONObject("map");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("Could not read map: " + e.getMessage(), e);
-    }
-    if (jsonmap == null)
-    {
-      throw new UnmarshallException("map missing");
-    }
+
+    JSONObject jsonmap = getJsonObjectByMarshallingMode(jso, "map");
     state.setSerialized(o, abmap);
     Iterator i = jsonmap.keys();
     String key = null;

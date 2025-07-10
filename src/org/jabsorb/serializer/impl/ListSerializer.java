@@ -190,7 +190,7 @@ public class ListSerializer extends AbstractSerializer
     // unmarshall as per the mode
     switch (MarshallingModeContext.get()) {
       case JABSORB:
-        sanityCheckForListClass((JSONObject) o);
+        sanityCheckForListClass((JSONObject) o, clazz);
         jsonlist = getJsonArrayFromListNode(o);
         break;
       case STANDARD_REST:
@@ -230,8 +230,8 @@ public class ListSerializer extends AbstractSerializer
     // unmarshall as per the mode
     switch (MarshallingModeContext.get()) {
       case JABSORB:
-        sanityCheckForListClass((JSONObject) o);
-        al = getAbstractListByClass(getJavaClass((JSONObject) o));
+        sanityCheckForListClass((JSONObject) o, clazz);
+        al = getAbstractListByClass(getJavaClass((JSONObject) o, clazz));
         jsonlist = getJsonArrayFromListNode(o);
         break;
       case STANDARD_REST:
@@ -304,25 +304,8 @@ public class ListSerializer extends AbstractSerializer
     return jsonlist;
   }
 
-  private static String getJavaClass(JSONObject jso) throws UnmarshallException {
-    String javaClass;
-    try
-    {
-      javaClass = jso.getString("javaClass");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("Could not read javaClass", e);
-    }
-    if (javaClass == null)
-    {
-      throw new UnmarshallException("no type hint");
-    }
-    return javaClass;
-  }
-
-  private static void sanityCheckForListClass(JSONObject obj) throws UnmarshallException {
-    String javaClass = getJavaClass(obj);
+  private static void sanityCheckForListClass(JSONObject obj, Class clazz) throws UnmarshallException {
+    String javaClass = getJavaClass(obj, clazz);
     if (!(javaClass.equals("java.util.List")
             || javaClass.equals("java.util.AbstractList")
             || javaClass.equals("java.util.LinkedList")
