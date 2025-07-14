@@ -1689,7 +1689,7 @@ public class JSONRPCBridge
     }
     catch (UnmarshallException e)
     {
-      throw new UnmarshallException("arg " + (i + 1) + " could not unmarshall", e);
+      throw new UnmarshallException("arg " + (i + 1) + " could not unmarshall. arguments: \n" + arguments.toString(), e);
     }
 
     return javaArgs;
