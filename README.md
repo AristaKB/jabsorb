@@ -21,9 +21,12 @@ To introduce new changes in this repo follow below steps:
   - Replace the new zip with the older zip in ngfw_src/downloads.
   - Build NGFW locally and verify your changes.
 - Commit and push the changes.
-# Create release tag
+# Create release
+- After jabsorb changes are verified merge the branch in master.
 - Create a tag with name {VERSION}-src and push it. For ex., `git tag -a 1.2.5-src -m "Release 1.2.5" && git push origin 1.2.5-src`
+- From github, create a new release using the tag.
 # Update NGFW
+- Download the zip from git using based on the tag.
 - In ngfw_src, update `buildtools/jars.rb` as per the latest dependent libraries. Such as below:
 ```
 def Jars.findJars
