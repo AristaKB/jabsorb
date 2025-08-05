@@ -33,10 +33,12 @@ import java.util.Iterator;
 
 import org.jabsorb.serializer.AbstractSerializer;
 import org.jabsorb.serializer.MarshallException;
+import org.jabsorb.serializer.MarshallingModeContext;
 import org.jabsorb.serializer.ObjectMatch;
 import org.jabsorb.serializer.SerializerState;
 import org.jabsorb.serializer.UnmarshallException;
 import org.jabsorb.JSONSerializer;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -82,17 +84,30 @@ public class DictionarySerializer extends AbstractSerializer
       throws MarshallException
   {
     Dictionary ht = (Dictionary) o;
-    JSONObject obj = new JSONObject();
+    JSONObject obj = null;
     JSONObject mapdata = new JSONObject();
 
+    String parentNode = null;
     try
     {
-      if (ser.getMarshallClassHints())
-      {
-        obj.put("javaClass", o.getClass().getName());
+      switch (MarshallingModeContext.get()) {
+        case JABSORB:
+          obj = new JSONObject();
+          if (ser.getMarshallClassHints())
+          {
+            obj.put("javaClass", o.getClass().getName());
+          }
+          parentNode = "map";
+          obj.put(parentNode, mapdata);
+          break;
+        case STANDARD_REST:
+          // obj becomes the actual map
+          obj = mapdata;
+          break;
+        default:
+          throw new MarshallException("Invalid marshall mode: " + MarshallingModeContext.get());
       }
-      obj.put("map", mapdata);
-      state.push(o,mapdata,"map");
+      state.push(o, mapdata, parentNode);
     }
     catch (JSONException e)
     {
@@ -129,50 +144,24 @@ public class DictionarySerializer extends AbstractSerializer
     }
     finally
     {
-      state.pop();
+      // pop can only be done if state.push() was done against a parent ref
+      if (parentNode != null) {
+        state.pop();
+      }
     }
     return obj;
   }
 
-  // TODO: try unMarshall and unMarshall share 90% code. Put in into an
-  // intermediate function.
-  // TODO: Also cache the result somehow so that an unmarshall
+  // TODO: cache the result somehow so that an unmarshall
   // following a tryUnmarshall doesn't do the same work twice!
   public ObjectMatch tryUnmarshall(SerializerState state, Class clazz, Object o)
       throws UnmarshallException
   {
     JSONObject jso = (JSONObject) o;
-    String java_class;
-    try
-    {
-      java_class = jso.getString("javaClass");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("Could not read javaClass", e);
-    }
-    if (java_class == null)
-    {
-      throw new UnmarshallException("no type hint");
-    }
-    if (!(java_class.equals("java.util.Dictionary") || java_class
-        .equals("java.util.Hashtable")))
-    {
-      throw new UnmarshallException("not a Dictionary");
-    }
-    JSONObject jsonmap;
-    try
-    {
-      jsonmap = jso.getJSONObject("map");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("map missing", e);
-    }
-    if (jsonmap == null)
-    {
-      throw new UnmarshallException("map missing");
-    }
+    sanityCheckForDictionaryClass(getJavaClass(jso, clazz));
+
+    JSONObject jsonmap = getJsonObjectByMarshallingMode(jso, "map");
+
     ObjectMatch m = new ObjectMatch(-1);
     state.setSerialized(o, m);
 
@@ -202,43 +191,16 @@ public class DictionarySerializer extends AbstractSerializer
       throws UnmarshallException
   {
     JSONObject jso = (JSONObject) o;
-    String java_class;
-    try
-    {
-      java_class = jso.getString("javaClass");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("Could not read javaClass", e);
-    }
-    if (java_class == null)
-    {
-      throw new UnmarshallException("no type hint");
-    }
-    Hashtable ht;
-    if (java_class.equals("java.util.Dictionary")
-        || java_class.equals("java.util.Hashtable"))
-    {
-      ht = new Hashtable();
-    }
-    else
-    {
-      throw new UnmarshallException("not a Dictionary");
-    }
-    JSONObject jsonmap;
-    try
-    {
-      jsonmap = jso.getJSONObject("map");
-    }
-    catch (JSONException e)
-    {
-      throw new UnmarshallException("map missing", e);
-    }
+    sanityCheckForDictionaryClass(getJavaClass(jso, clazz));
+
+    JSONObject jsonmap = getJsonObjectByMarshallingMode(jso, "map");
+
     if (jsonmap == null)
     {
       throw new UnmarshallException("map missing");
     }
 
+    Hashtable ht = new Hashtable();
     state.setSerialized(o, ht);
 
     Iterator i = jsonmap.keys();
@@ -260,5 +222,19 @@ public class DictionarySerializer extends AbstractSerializer
       throw new UnmarshallException("key " + key + " " + e.getMessage(), e);
     }
     return ht;
+  }
+
+  /**
+   * Check if java_class is either Dictionary or Hashtable
+   * Throws UnmarshallException otherwise
+   * @param java_class
+   * @throws UnmarshallException
+   */
+  private static void sanityCheckForDictionaryClass(String java_class) throws UnmarshallException {
+    if (!(java_class.equals("java.util.Dictionary") || java_class
+            .equals("java.util.Hashtable")))
+    {
+      throw new UnmarshallException("not a Dictionary");
+    }
   }
 }

@@ -27,6 +27,8 @@
 package org.jabsorb.serializer;
 
 import org.jabsorb.JSONSerializer;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Convenience class for implementing Serializers providing default setOwner and
@@ -92,4 +94,90 @@ public abstract class AbstractSerializer implements Serializer
   {
     this.ser = ser;
   }
+
+  /**
+   * Sets javaClass attribute to JSONObject. javaClass value is retrieved from class name of input Object instance
+   * @param o
+   * @param obj
+   * @throws MarshallException
+   */
+  protected void setJavaClassToJSONObject(Object o, JSONObject obj) throws MarshallException {
+    if (ser.getMarshallClassHints())
+    {
+      try
+      {
+        obj.put("javaClass", o.getClass().getName());
+      }
+      catch (JSONException e)
+      {
+        throw new MarshallException("javaClass not found!");
+      }
+    }
+  }
+
+  /**
+   * Get javaClass from the input object's hint. If unable to get javaClass from the hint, use input clazz
+   * Throws UnmarshallException if unable to retrieve javaClass
+   * @param jso
+   * @return
+   * @throws UnmarshallException
+   */
+  protected static String getJavaClass(JSONObject jso, Class clazz) throws UnmarshallException {
+    String javaClass = null;
+    try
+    {
+      javaClass = jso.getString("javaClass");
+    }
+    catch (JSONException e)
+    {
+      // try getting javaClass using clazz
+    }
+    if (clazz != null) {
+      javaClass = clazz.getName();
+    }
+
+    if (javaClass == null)
+    {
+      throw new UnmarshallException("no type hint");
+    }
+    return javaClass;
+  }
+
+
+  /**
+   * Returns JSON object as per the MarshallingMode.
+   * JABSORB input obj -> '{objKey: {jso}, javaClass: className}'
+   * STANDARD_REST input obj -> '{jso}' (i.e. return as is jso object)
+   * @param jso
+   * @return
+   * @throws UnmarshallException
+   */
+  protected static JSONObject getJsonObjectByMarshallingMode(JSONObject jso, String objKey) throws UnmarshallException {
+    JSONObject jsonObj;
+    switch (MarshallingModeContext.get()) {
+      case JABSORB:
+        try
+        {
+          jsonObj = jso.getJSONObject(objKey);
+        }
+        catch (JSONException e)
+        {
+          throw new UnmarshallException(objKey + " missing", e);
+        }
+        break;
+      case STANDARD_REST:
+        // jso is the actual object
+        jsonObj = jso;
+        break;
+      default:
+        throw new UnmarshallException("Invalid unarshall mode: " + MarshallingModeContext.get());
+    }
+
+    if (jsonObj == null)
+    {
+      throw new UnmarshallException(objKey + " missing");
+    }
+    return jsonObj;
+  }
+
 }

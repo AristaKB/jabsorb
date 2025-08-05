@@ -45,6 +45,8 @@ import org.jabsorb.localarg.LocalArgResolver;
 import org.jabsorb.reflect.ClassAnalyzer;
 import org.jabsorb.reflect.ClassData;
 import org.jabsorb.reflect.MethodKey;
+import org.jabsorb.serializer.APIVersion;
+import org.jabsorb.serializer.MarshallingModeContext;
 import org.jabsorb.serializer.MarshallException;
 import org.jabsorb.serializer.ObjectMatch;
 import org.jabsorb.serializer.Serializer;
@@ -110,7 +112,10 @@ import org.slf4j.LoggerFactory;
  */
 public class JSONRPCBridge
  {
-    public JSONRPCBridge()
+
+     private static final String DEFAULT_API_VERSION = "v1";
+
+     public JSONRPCBridge()
     {
         try {
             ser.registerDefaultSerializers();
@@ -559,7 +564,7 @@ public class JSONRPCBridge
       // Handle "system.listMethods"
       // this is called by the browser side javascript
       // when a new JSONRpcClient object is initialized.
-      if (encodedMethod.equals("system.listMethods"))
+      if (encodedMethod.startsWith("system.listMethods"))
       {
         HashSet m = new HashSet();
         globalBridge.allInstanceMethods(m);
@@ -578,7 +583,7 @@ public class JSONRPCBridge
         }
         return new JSONRPCResult(JSONRPCResult.CODE_SUCCESS, requestId, methods);
       }
-      if (encodedMethod.equals("system.getNonce"))
+      if (encodedMethod.startsWith("system.getNonce"))
       {
         return new JSONRPCResult(JSONRPCResult.CODE_SUCCESS, requestId, this.nonce);
       }
@@ -654,16 +659,18 @@ public class JSONRPCBridge
             + method.getName() + "(" + argSignature(method) + ")");
       }
 
+      // Set the marshalling mode based on methodName
+      MarshallingModeContext.push(APIVersion.getMarshallingMode(methodName));
+
       // Unmarshall arguments
-      Object javaArgs[] = unmarshallArgs(context, method, arguments);
+      Object[] javaArgs = unmarshallArgs(context, method, arguments);
 
       // Call pre invoke callbacks
       if (cbc != null)
       {
-        for (int i = 0; i < context.length; i++)
-        {
-          cbc.preInvokeCallback(context[i], itsThis, method, javaArgs);
-        }
+          for (Object o : context) {
+              cbc.preInvokeCallback(o, itsThis, method, javaArgs);
+          }
       }
 
       // Invoke the method
@@ -672,10 +679,9 @@ public class JSONRPCBridge
       // Call post invoke callbacks
       if (cbc != null)
       {
-        for (int i = 0; i < context.length; i++)
-        {
-          cbc.postInvokeCallback(context[i], itsThis, method, returnObj);
-        }
+          for (Object o : context) {
+              cbc.postInvokeCallback(o, itsThis, method, returnObj);
+          }
       }
 
       // Marshall the result
@@ -696,7 +702,7 @@ public class JSONRPCBridge
           cbc.errorCallback(context[i], itsThis, method, e);
         }
       }
-      log.error("exception occured",e);
+      log.error("exception occurred",e);
       for ( Throwable cause = e.getCause() ; cause != null ; cause = cause.getCause() ) {
         log.error("exception cause: ", cause);
       }
@@ -738,6 +744,8 @@ public class JSONRPCBridge
       }
       result = new JSONRPCResult(JSONRPCResult.CODE_REMOTE_EXCEPTION,
           requestId, exceptionTransformer.transform(e));
+    } finally {
+        MarshallingModeContext.clear();
     }
 
     // Return the results
@@ -1681,7 +1689,7 @@ public class JSONRPCBridge
     }
     catch (UnmarshallException e)
     {
-      throw new UnmarshallException("arg " + (i + 1) + " could not unmarshall", e);
+      throw new UnmarshallException("arg " + (i + 1) + " could not unmarshall. arguments: \n" + arguments.toString(), e);
     }
 
     return javaArgs;
