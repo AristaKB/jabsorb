@@ -1,0 +1,7 @@
+build
+out
+
+**/*.class
+# Editor directories and files
+**/*.idea
+**/*.iml

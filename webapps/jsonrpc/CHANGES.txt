@@ -1,5 +1,31 @@
 CHANGES log
 
+2025-08-05 jabsorb 1.2.5 release
+
+* Support for Two Marshalling Modes
+* Jabsorb now provides two distinct marshalling strategies, controlled on a per-thread basis:
+
+* 1) JABSORB Mode (Default)
+*   - Follows the traditional Jabsorb marshalling behavior.
+*   - Includes additional type metadata nodes such as list, set, and map around Java entity structures.
+*   - Suitable for ExtJS-based API consumers.
+
+* 2) STANDARD_REST Mode
+*   - Designed for standard REST API payloads.
+*   - Serializes JSON directly following the structure of the Java entity model without additional wrapper nodes.
+*   - Recommended for VueJS-based API consumers.
+
+* Implementation Details
+* Thread-Scoped Marshalling Mode: The marshalling mode is stored in a thread-local context, ensuring correct behavior
+*   even in concurrent API executions.
+* Automatic Mode Detection: The marshalling mode is automatically selected based on the method name being invoked.
+*   If the API method name ends with V2, the system will set the STANDARD_REST mode in the current thread context
+*   else, if ends with V1 or by default, JABSORB mode is set.
+
+* Compatibility
+*   Existing APIs and clients using the default JABSORB behavior will continue to function without changes.
+*   New REST-style APIs or VueJS-based clients can now leverage the STANDARD_REST mode for more concise and predictable payloads.
+
 2024-06-03 jabsorb 1.2.4 release
 
 * Updated slf4j dependency version
