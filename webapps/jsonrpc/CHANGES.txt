@@ -1,5 +1,14 @@
 CHANGES log
 
+2026-06-15 jabsorb 1.2.5 fix
+
+* Fix InheritableThreadLocal race in MarshallingModeContext
+*   Override childValue() to return a defensive copy of the parent's ArrayDeque
+*   instead of sharing the same mutable reference. On JDK21, aggressive parallel
+*   thread creation during UVM startup caused concurrent push/pop corruption on
+*   the shared stack, silently failing SettingsManager.save() and leaving settings
+*   files (admin.js, system.js) missing from disk.
+
 2025-08-05 jabsorb 1.2.5 release
 
 * Support for Two Marshalling Modes
