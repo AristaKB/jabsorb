@@ -39,7 +39,8 @@ public class MarshallingModeContext {
             // default to JABSORB
             return MarshallingMode.JABSORB;
         }
-        return stack.isEmpty() ? null : stack.peek();
+        MarshallingMode mode = stack.peek();
+        return mode != null ? mode : MarshallingMode.JABSORB;
     }
 
     /**
