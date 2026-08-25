@@ -1,8 +1,7 @@
 package org.jabsorb.serializer;
 
-import java.util.Deque;
-import java.util.Stack;
 import java.util.ArrayDeque;
+import java.util.Deque;
 
 /**
  * Context that holds the marshalling mode for a given thread.
@@ -15,6 +14,10 @@ public class MarshallingModeContext {
         @Override
         protected Deque<MarshallingMode> initialValue() {
             return new ArrayDeque<>();
+        }
+        @Override
+        protected Deque<MarshallingMode> childValue(Deque<MarshallingMode> parentValue) {
+            return new ArrayDeque<>(parentValue);
         }
     };
 
@@ -36,7 +39,8 @@ public class MarshallingModeContext {
             // default to JABSORB
             return MarshallingMode.JABSORB;
         }
-        return stack.isEmpty() ? null : stack.peek();
+        MarshallingMode mode = stack.peek();
+        return mode != null ? mode : MarshallingMode.JABSORB;
     }
 
     /**

@@ -1,5 +1,14 @@
 CHANGES log
 
+2026-08-26 jabsorb 1.2.6 release
+
+* Fix TOCTOU race in MarshallingModeContext.get()
+*   The get() method had a redundant second isEmpty() check (line 42) that could
+*   return null despite the Javadoc contract promising a JABSORB default. With the
+*   childValue() fix from 1.2.5, this is no longer a practical crash vector, but
+*   peek() can still return null on a concurrent pop(). Changed to always fall back
+*   to MarshallingMode.JABSORB, ensuring get() never returns null.
+
 2025-08-05 jabsorb 1.2.5 release
 
 * Support for Two Marshalling Modes
